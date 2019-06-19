@@ -35,8 +35,8 @@
       ref="map"
       appId="cdv79LSLiwhEuBmyXWIj"
       appCode="xz4vhAwTlOfZCl_PcMEc4Q"
-      lat="37.7397"
-      lng="-121.4252"
+      lat="49.006889"
+      lng="8.403653"
     />
   </div>
 </template>
