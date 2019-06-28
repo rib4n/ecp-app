@@ -1,5 +1,5 @@
 {
-  "name": "Vue Isoline Routing with here maps",
+  "name": "ecp-app",
   "version": 1,
   "builds": [{ "src": "src/main.js", "use": "@now/node-server" }]
 }

@@ -5,6 +5,49 @@
 </template>
 
 <script>
+/* eslint-disable */
+import axios from 'axios'
+let markers = {
+  parkingSpots: {}
+};
+try {
+  markers.parkingSpots.available = require('../assets/markers/availableParkingSpot.svg')
+  markers.parkingSpots.unavailable = require('../assets/markers/unavailableParkingSpot.svg')
+} catch (err) {
+  console.log(err);
+}
+
+// generic get-request to BFF
+let getRequest = async (url) => {
+  try {
+    return await axios.get(url, {headers: {accept: 'application/json'}})
+      .then(res => {
+        return res;
+      })
+      .catch(err => {
+        throw(err)
+      })
+  } catch (err) {
+    console.log(err)
+  }
+}
+// get parking spots at specific location in radius
+let getParkingSpots = async (lat, lng, radius) => {
+  let location = lat + ';' + lng
+  let res = await getRequest(`https://ecp-bff.cm.tm.kit.edu/parkingSpot?location=${location}&radius=${radius}`)
+  if (res.data.content) {
+    return res.data.content
+  }
+}
+let createMarker = (availability, lat, lng) => {
+  // Create an icon, an object holding the latitude and longitude, and a marker:
+
+  let icon = new H.map.Icon(availability ? markers.parkingSpots.available : markers.parkingSpots.unavailable)
+  let coords = {lat, lng}
+  let marker = new H.map.Marker(coords, {icon: icon})
+  return marker;
+}
+
 export default {
   name: "HereMap",
   data() {
@@ -14,7 +57,8 @@ export default {
       router: {},
       geocoder: {},
       directions: [],
-      ui: {}
+      ui: {},
+      parkingSpots: []
     };
   },
   props: {
@@ -33,16 +77,16 @@ export default {
  
     this.router = this.platform.getRoutingService();
     this.geocoder = this.platform.getGeocodingService();
-    console.log(this.platform)
+    // console.log(this.platform)
   },
-  mounted() {
+  async mounted() {
     var pixelRatio = window.devicePixelRatio || 1;
     let defaultLayers = this.platform.createDefaultLayers({
       tileSize: pixelRatio === 1 ? 256 : 512,
       ppi: pixelRatio === 1 ? undefined : 320
     });
     this.map = new H.Map(this.$refs.map, defaultLayers.normal.map, {
-      zoom: 10,
+      zoom: 17,
       center: { lng: this.lng, lat: this.lat },
       pixelRatio: pixelRatio
     });
@@ -50,6 +94,12 @@ export default {
       new H.mapevents.MapEvents(this.map)
     );
     this.ui = H.ui.UI.createDefault(this.map, defaultLayers);
+
+    // get parking spots
+    this.parkingSpots = await getParkingSpots(this.lat, this.lng, 100)
+    for (let parkingSpot of this.parkingSpots) {
+      this.map.addObject(createMarker(parkingSpot.availability, parkingSpot.location.lat, parkingSpot.location.lon));
+    }
   },
   methods: {
     getCoordinates(query) {
